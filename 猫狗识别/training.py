@@ -3,14 +3,13 @@ import tensorflow as tf
 import input_data
 import model
 
-
 N_CLASSES = 2
 IMG_W = 208  # 重新定义图片的大小，图片如果过大则训练比较慢
 IMG_H = 208
 BATCH_SIZE = 32  # 每批数据的大小
 CAPACITY = 256
 MAX_STEP = 10000  # 训练的步数
-learning_rate = 0.0001  # 学习率，
+learning_rate = 0.00001  # 学习率，
 
 
 def run_training():
@@ -25,7 +24,7 @@ def run_training():
     """
     获得预测值
     """
-    logit = model.inference(image_batch,BATCH_SIZE,N_CLASSES)
+    logit = model.inference(image_batch,BATCH_SIZE)
     """
     sofmax,将其转化为概率
     """
@@ -43,10 +42,11 @@ def run_training():
         sess.run(init_op)
         for i in range(MAX_STEP):
             sess.run(train_op)
-            print("训练第%d步，准确率为%f" % (i,
-                                     sess.run(accuracy)
+            print("训练第%d步，损失值%f，准确率为%f" % (i,
+                                        sess.run(loss),
+                                         sess.run(accuracy)
                                      ))
-            if i==1000:
+            if i==2000:
                 saver.save(sess,"./saver/model.ckpt")
 
         coord.request_stop()

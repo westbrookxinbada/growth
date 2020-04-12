@@ -5,11 +5,11 @@ def weight_variables(shape):
     return w
 
 def bias_variables(shape):
-    ##为什么要float类型
+
     b = tf.Variable(tf.constant(0.0,shape=shape))
     return b
 
-def inference(images, batch_size, n_classes):
+def inference(images, batch_size):
 
     ##第一层卷积池化
     with tf.variable_scope("conv1_pool1") as scope:
@@ -26,43 +26,37 @@ def inference(images, batch_size, n_classes):
         ##池化第二波张量形状[-1,52,52,16]
         x_pool2 = tf.nn.max_pool(x_relu2,ksize=[1,2,2,1],strides=[1,2,2,1],padding="SAME")
 
-    with tf.variable_scope('full_connect') as scope:
+    with tf.variable_scope("full_connect1") as scope:
         reshape = tf.reshape(x_pool2, shape=[batch_size, -1])
-
-        ##这一步具体是怎么样的？？？？？？？？？？？？？？？
         dim = reshape.get_shape()[1].value
-
-        weights = weight_variables([dim,2])
-        biases = bias_variables([2])
-        y_predict =tf.matmul(reshape, weights) + biases
-
+        weights1 = weight_variables([dim, 128])
+        bias1 = bias_variables([128.0])
+        y = tf.nn.relu(tf.matmul(reshape, weights1) + bias1)
+    with tf.variable_scope('full_connect2') as scope:
+        weights2 = weight_variables([128, 2])
+        biases = bias_variables([2.0])
+        y_predict = tf.matmul(y, weights2) + biases
         return y_predict
-
 
 
 def losses(logits, labels):
     with tf.variable_scope('loss') as scope:
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits \
-            (logits=logits, labels=labels, name='xentropy_per_example')
-        loss = tf.reduce_mean(cross_entropy, name='loss')
+            (logits=logits, labels=labels)
+        loss = tf.reduce_mean(cross_entropy)
     return loss
 
 
 def trainning(loss, learning_rate):
     with tf.name_scope('optimizer'):
-        # optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        # global_step = tf.Variable(0, name='global_step', trainable=False)
-        # train_op = optimizer.minimize(loss, global_step=global_step)
         train_op =tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
-
     return train_op
 
 def evaluation(logits, labels):
     with tf.variable_scope('accuracy') as scope:
         correct = tf.nn.in_top_k(logits, labels, 1)
-        print(correct)
+        ##一个【true，false】列表
         correct = tf.cast(correct, tf.float16)
         accuracy = tf.reduce_mean(correct)
-        tf.summary.scalar(scope.name + '/accuracy', accuracy)
     return accuracy
 
